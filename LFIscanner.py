@@ -6,7 +6,7 @@ from banner.banner import (
     BLUE_PLAIN as BLUE,
     CYAN_PLAIN as CYAN,
     END_PLAIN as END,
-    banner
+    banner )
 from attacks.linux import LinuxLFI
 import argparse
 import asyncio
