@@ -1,12 +1,12 @@
 from utils.validators import validate_positive_integer, validate_url
 from banner.banner import (
     RED_PLAIN as RED,
-    GREEN_PLAIN as GREEN, 
+    GREEN_PLAIN as GREEN,
     YELLOW_PLAIN as YELLOW,
     BLUE_PLAIN as BLUE,
     CYAN_PLAIN as CYAN,
     END_PLAIN as END,
-    banner )
+    banner)
 from attacks.linux import LinuxLFI
 import argparse
 import asyncio
@@ -39,19 +39,18 @@ def parse_arguments():
 async def main():
     global vulnerabilities_found
     args = parse_arguments()
-    
+
     banner()
-    
+
     if args.verbose:
         print(f"{GREEN}[+]{END} Target URL: {CYAN}{args.target}{END}")
         print(f"{GREEN}[+]{END} Walk count: {CYAN}{args.walkcount}{END}")
         print(f"{GREEN}[+]{END} Threads: {CYAN}{args.threads}{END}")
         print(f"{GREEN}[+]{END} Timeout: {CYAN}{args.timeout}s{END}")
-    
+
     if args.fullscan:
         print(f"{YELLOW}[WARNING]{END} Full scan enabled. This may take longer.")
-    
-   
+
     wordlist_path = pathlib.Path(args.wordlist)
     if not wordlist_path.exists():
         print(f"{RED}[ERROR]{END} Wordlist not found: {args.wordlist}")
@@ -59,24 +58,24 @@ async def main():
     if not wordlist_path.is_file():
         print(f"{RED}[ERROR]{END} Path is not a file: {args.wordlist}")
         exit(1)
-    
+
     try:
         with open(args.wordlist, "r") as f:
             file_paths = tqdm(f, desc="Processing wordlist", unit="path", dynamic_ncols=True)
-            
-            
+
             payloads = [urllib.parse.quote_plus(line.strip()) for line in file_paths]
-            
-            await LinuxLFI.execute_attack_parallel(payloads, args)
+
+            await CustomLinuxLFI().execute_attack_parallel(payloads, args)
 
             if vulnerabilities_found:
                 print(f"{GREEN}[+]{END} Vulnerabilities found during scan.")
             else:
                 print(f"{YELLOW}[INFO]{END} No vulnerabilities found during scan.")
-                
+
     except Exception as e:
         print(f"{RED}[ERROR]{END} An error occurred: {str(e)}")
         exit(1)
+
 
 def report_vulnerability(url):
     global vulnerabilities_found
@@ -91,8 +90,7 @@ class CustomLinuxLFI(LinuxLFI):
             target_url = f"{args.target}{payload}"
 
             try:
-                # Changed from LinuxLFI.perform_request to super() call
-                response = await super().perform_request(target_url, args)
+                response = await super().fetch(target_url, args)
 
                 if response.status == 200:
                     report_vulnerability(target_url)
